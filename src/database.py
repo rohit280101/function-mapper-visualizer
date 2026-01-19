@@ -1,81 +1,56 @@
-"""Database module for handling data persistence."""
-# src/database.py
-"""
-Database access layer using SQLAlchemy.
 
-Responsible for:
-- Creating the SQLite file.
-- Creating all tables.
-- Providing helper methods to write/read Pandas DataFrames.
-"""
-
-from __future__ import annotations
-from typing import Optional
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, Column, Integer, Float
+from sqlalchemy.orm import declarative_base, sessionmaker
 import pandas as pd
+import os
 
-from .models import Base
+Base = declarative_base()
 
+class TrainingData(Base):
+    __tablename__ = 'training_data'
+    id = Column(Integer, primary_key=True)
+    x = Column(Float)
+    y1 = Column(Float)
+    y2 = Column(Float)
+    y3 = Column(Float)
+    y4 = Column(Float)
 
-class DatabaseError(Exception):
-    """Custom exception type for database-related errors."""
-    pass
+class TestMapping(Base):
+    __tablename__ = 'test_mapping'
+    id = Column(Integer, primary_key=True)
+    x = Column(Float)
+    y = Column(Float)
+    delta_y = Column(Float)
+    ideal_func_no = Column(Integer)
 
+class DatabaseHandler:
+    def __init__(self, db_path="data/ideal_functions.db"):
+        self.engine = create_engine(f"sqlite:///{db_path}")
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
 
-class DatabaseManager:
-    """
-    Encapsulates all low-level database operations.
-
-    Attributes:
-        db_url: SQLAlchemy URL for the SQLite database file.
-        engine: SQLAlchemy engine instance.
-        SessionLocal: Session factory.
-    """
-
-    def __init__(self, db_url: str = "sqlite:///assignment.db") -> None:
-        """
-        Initialize the manager with the given database URL.
-        """
-        self.db_url = db_url
-        self.engine = create_engine(self.db_url, echo=False, future=True)
-        self.SessionLocal = sessionmaker(bind=self.engine, autoflush=False, autocommit=False)
-
-    def create_schema(self) -> None:
-        """
-        Create all database tables as defined in the ORM models.
-        """
+    def insert_training_data(self, dataframe):
+        session = self.Session()
         try:
-            Base.metadata.create_all(self.engine)
-        except Exception as error:  # noqa: BLE001
-            raise DatabaseError(f"Failed to create database schema: {error}") from error
+            for _, row in dataframe.iterrows():
+                record = TrainingData(x=row[0], y1=row[1], y2=row[2], y3=row[3], y4=row[4])
+                session.add(record)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
 
-    def get_session(self) -> Session:
-        """
-        Create and return a new SQLAlchemy Session instance.
-        """
-        return self.SessionLocal()
-
-    def write_dataframe(self, df: pd.DataFrame, table_name: str, if_exists: str = "replace") -> None:
-        """
-        Persist a Pandas DataFrame into the SQLite database using DataFrame.to_sql.
-
-        Args:
-            df: DataFrame to persist.
-            table_name: Database table name.
-            if_exists: Behavior if table already exists (replace/append/fail).
-        """
+    def insert_test_mapping(self, dataframe):
+        session = self.Session()
         try:
-            df.to_sql(table_name, self.engine, index=False, if_exists=if_exists)
-        except Exception as error:  # noqa: BLE001
-            raise DatabaseError(f"Failed to write DataFrame to table '{table_name}': {error}") from error
-
-    def read_table(self, table_name: str) -> pd.DataFrame:
-        """
-        Read the full content of the given table into a DataFrame.
-        """
-        try:
-            return pd.read_sql_table(table_name, self.engine)
-        except Exception as error:  # noqa: BLE001
-            raise DatabaseError(f"Failed to read table '{table_name}': {error}") from error
+            for _, row in dataframe.iterrows():
+                record = TestMapping(x=row["x"], y=row["y"], delta_y=row["delta_y"], ideal_func_no=row["ideal_func_no"])
+                session.add(record)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
