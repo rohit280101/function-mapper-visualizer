@@ -6,7 +6,7 @@ import os
 
 Base = declarative_base()
 
-class TrainingData(Base):
+class Training_Data(Base):
     __tablename__ = 'training_data'
     id = Column(Integer, primary_key=True)
     x = Column(Float)
@@ -15,7 +15,7 @@ class TrainingData(Base):
     y3 = Column(Float)
     y4 = Column(Float)
 
-class TestMapping(Base):
+class Test_Mapping(Base):
     __tablename__ = 'test_mapping'
     id = Column(Integer, primary_key=True)
     x = Column(Float)
@@ -23,8 +23,8 @@ class TestMapping(Base):
     delta_y = Column(Float)
     ideal_func_no = Column(Integer)
 
-class DatabaseHandler:
-    def __init__(self, db_path="data/ideal_functions.db"):
+class Database_Handler:
+    def __init__(self, db_path="datasets/ideal_functions.db"):
         self.engine = create_engine(f"sqlite:///{db_path}")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
@@ -33,7 +33,7 @@ class DatabaseHandler:
         session = self.Session()
         try:
             for _, row in dataframe.iterrows():
-                record = TrainingData(x=row[0], y1=row[1], y2=row[2], y3=row[3], y4=row[4])
+                record = Training_Data(x=row[0], y1=row[1], y2=row[2], y3=row[3], y4=row[4])
                 session.add(record)
             session.commit()
         except Exception as e:
@@ -46,7 +46,7 @@ class DatabaseHandler:
         session = self.Session()
         try:
             for _, row in dataframe.iterrows():
-                record = TestMapping(x=row["x"], y=row["y"], delta_y=row["delta_y"], ideal_func_no=row["ideal_func_no"])
+                record = Test_Mapping(x=row["x"], y=row["y"], delta_y=row["delta_y"], ideal_func_no=row["ideal_func_no"])
                 session.add(record)
             session.commit()
         except Exception as e:

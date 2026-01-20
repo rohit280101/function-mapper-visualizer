@@ -5,7 +5,7 @@ import numpy as np
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from src.data_processor import IdealFunctionSelector, TestDataMapper
+from source_files.data_processor import IdealFunctionSelector, TestDataMapper
 
 def generate_mock_data():
     x = np.arange(0, 10, 1)

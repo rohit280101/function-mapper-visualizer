@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.DS_Store
+data/ideal_functions.db
+outputs/
+.venv/
+venv/
+*.egg
