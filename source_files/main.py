@@ -1,12 +1,16 @@
 import pandas as pd
-from database import DatabaseHandler
+import os
+from database import Database_Handler
 from data_processor import IdealFunctionSelector, TestDataMapper
 from visualization import Visualizer
 
 def main():
-    training_df = pd.read_csv("data/train.csv")
-    ideal_df = pd.read_csv("data/ideal.csv")
-    test_df = pd.read_csv("data/test.csv")
+    # Get the project root directory (parent of source_files)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    training_df = pd.read_csv(os.path.join(project_root, "datasets/train.csv"))
+    ideal_df = pd.read_csv(os.path.join(project_root, "datasets/ideal.csv"))
+    test_df = pd.read_csv(os.path.join(project_root, "datasets/test.csv"))
 
     training_df.rename(columns={training_df.columns[0]: "x"}, inplace=True)
     ideal_df.rename(columns={ideal_df.columns[0]: "x"}, inplace=True)
@@ -19,12 +23,13 @@ def main():
     mapper = TestDataMapper(test_df, ideal_df, selected, max_dev)
     mapped_df = mapper.map_test_data()
 
-    db = DatabaseHandler()
+    db = Database_Handler()
     db.insert_training_data(training_df)
     db.insert_test_mapping(mapped_df)
 
     visualizer = Visualizer(training_df, ideal_df, selected, mapped_df)
-    visualizer.plot_all("outputs/visualization.html")
+    output_path = os.path.join(project_root, "outputs/visualization.html")
+    visualizer.plot_all(output_path)
 
 if __name__ == "__main__":
     main()
